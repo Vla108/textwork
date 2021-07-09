@@ -13,12 +13,14 @@ type TWORK struct {
 	si, ei, ci int
 }
 
-func (tw *TWORK) SetFromUTF8(text string) {
+func (tw *TWORK) SetText(text string) {
 	tw.TEXT = text
 	tw.ci = 0
 	tw.si = 0
 	tw.ei = 0
 }
+
+// OpenFile load text from file
 func (tw *TWORK) OpenFile(fname string) (r bool) {
 	var err error
 	var data []byte
@@ -34,6 +36,8 @@ func (tw *TWORK) OpenFile(fname string) (r bool) {
 	}
 	return false
 }
+
+// SaveToFile save text to file
 func (tw *TWORK) SaveToFile(fname string) {
 	da := []byte(string(tw.TEXT))
 	ioutil.WriteFile(fname, da, 0777)
@@ -41,31 +45,37 @@ func (tw *TWORK) SaveToFile(fname string) {
 
 }
 
-//add string
+// AddString
 func (tw *TWORK) AddString(text string) {
 	tw.TEXT += text
 }
+
+// AddRunes
 func (tw *TWORK) AddRunes(runet []rune) {
 	str := string(runet)
 	tw.TEXT += str
 }
+
+// Add any type as string
 func (tw *TWORK) Add(ti ...interface{}) {
 	for i := range ti {
 		tw.TEXT += fmt.Sprint(ti[i])
 	}
 }
 
-func (tw *TWORK) GetBlock(ss, es string) string {
-	if !tw.Seek(ss) {
+// GetBlock get block of text between 'startstring' and 'endstrings'
+func (tw *TWORK) GetBlock(startstring, endstrings string) string {
+	if !tw.Seek(startstring) {
 		return ""
 	}
 	si := tw.ci
-	if !tw.Seek(es) {
+	if !tw.Seek(endstrings) {
 		return ""
 	}
 	return string(tw.TEXT[si:tw.si])
 }
 
+// SetBlock replace block of text between 'startstring' and 'endstrings'
 func (tw *TWORK) SetBlock(startstring, endstring, newstring string) {
 	if !tw.Seek(startstring) {
 		return
@@ -86,11 +96,13 @@ func (tw *TWORK) SetBlock(startstring, endstring, newstring string) {
 	//return string(tw.TEXT[si:tw.si])
 }
 
+// Split same as strings.Split
 func (tw *TWORK) Split(splstring string) []string {
 
 	return strings.Split(tw.TEXT, splstring)
 }
 
+// Seek seek string and set cursor to the end of it
 func (tw *TWORK) Seek(ss string) bool {
 	//fmt.Println("Seek ->", ss)
 	l := len(tw.TEXT)
@@ -132,18 +144,23 @@ func (tw *TWORK) Seek(ss string) bool {
 	return false
 }
 
+// Replace same as strings.Replace whit n=1
 func (tw *TWORK) Replace(ss, ns string) {
 
 	tw.TEXT = strings.Replace(string(tw.TEXT), ss, ns, 1)
 
 }
+
+// ReplaceN same as strings.Replace
 func (tw *TWORK) ReplaceN(ss, ns string, count int) {
 
 	tw.TEXT = strings.Replace(string(tw.TEXT), ss, ns, count)
 }
 
-//words work. ss and es = 32-> " " or 10->\n
+//WORDS WORK
+//words in text have separator whith code of symbol = 32 or 10
 
+// NextWord set cursor to the end of next word and return true, while cursor will not reach end of text
 func (tw *TWORK) NextWord() bool {
 	l := len(tw.TEXT)
 	if tw.ci >= l {
@@ -180,6 +197,8 @@ func (tw *TWORK) NextWord() bool {
 	}
 	return true
 }
+
+// GoToWord list word until word not equal as needed
 func (tw *TWORK) GoToWord(w string) bool {
 	for tw.NextWord() {
 		if tw.CurWord() == w {
@@ -188,6 +207,8 @@ func (tw *TWORK) GoToWord(w string) bool {
 	}
 	return false
 }
+
+// GetWordsTo get all words from curent cursor position up to searched word
 func (tw *TWORK) GetWordsTo(ew string) string {
 
 	si := tw.ci
@@ -196,22 +217,20 @@ func (tw *TWORK) GetWordsTo(ew string) string {
 	}
 	return string(tw.TEXT[si : tw.si-1])
 }
+
+// CurWord get cuerrnt word after command NextWord()
 func (tw *TWORK) CurWord() string {
 	return string(tw.TEXT[tw.si:tw.ei])
 }
-func (tw *TWORK) CurIndex() int {
+
+// GetCursor get current cursor position
+func (tw *TWORK) GetCursor() int {
 	return tw.ci
 }
-func (tw *TWORK) SetIndex(ni int) {
+
+// SetCursor set cursor position
+func (tw *TWORK) SetCursor(ni int) {
 	if ni >= 0 && ni < len(tw.TEXT) {
 		tw.ci = ni
 	}
-}
-
-func slicetostring(elems []string) string {
-	rt := ""
-	for i := range elems {
-		rt += elems[i]
-	}
-	return rt
 }

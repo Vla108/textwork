@@ -9,12 +9,12 @@ import (
 )
 
 type TWORK struct {
-	Runes      []rune
+	TEXT       string
 	si, ei, ci int
 }
 
 func (tw *TWORK) SetFromUTF8(text string) {
-	tw.Runes = []rune(text)
+	tw.TEXT = text
 	tw.ci = 0
 	tw.si = 0
 	tw.ei = 0
@@ -25,7 +25,7 @@ func (tw *TWORK) OpenFile(fname string) (r bool) {
 
 	data, err = ioutil.ReadFile(fname)
 	if err == nil {
-		tw.Runes = []rune(string(data))
+		tw.TEXT = (string(data))
 		tw.ci = 0
 		tw.si = 0
 		tw.ei = 0
@@ -35,7 +35,7 @@ func (tw *TWORK) OpenFile(fname string) (r bool) {
 	return false
 }
 func (tw *TWORK) SaveToFile(fname string) {
-	da := []byte(string(tw.Runes))
+	da := []byte(string(tw.TEXT))
 	ioutil.WriteFile(fname, da, 0777)
 	os.Chmod(fname, 0777)
 
@@ -43,18 +43,16 @@ func (tw *TWORK) SaveToFile(fname string) {
 
 //add string
 func (tw *TWORK) AddString(text string) {
-	tw.Runes = append(tw.Runes, []rune(text)...)
+	tw.TEXT += text
 }
 func (tw *TWORK) AddRunes(runet []rune) {
-	tw.Runes = append(tw.Runes, runet...)
+	str := string(runet)
+	tw.TEXT += str
 }
 func (tw *TWORK) Add(ti ...interface{}) {
 	for i := range ti {
-		tw.Runes = append(tw.Runes, []rune(fmt.Sprint(ti[i]))...)
+		tw.TEXT += fmt.Sprint(ti[i])
 	}
-}
-func (tw *TWORK) GetAsString() string {
-	return string(tw.Runes)
 }
 
 func (tw *TWORK) GetBlock(ss, es string) string {
@@ -65,16 +63,9 @@ func (tw *TWORK) GetBlock(ss, es string) string {
 	if !tw.Seek(es) {
 		return ""
 	}
-	return string(tw.Runes[si:tw.si])
+	return string(tw.TEXT[si:tw.si])
 }
-func (tw *TWORK) GetWordsTo(ew string) string {
 
-	si := tw.ci
-	if !tw.GoToWord(ew) {
-		return ""
-	}
-	return string(tw.Runes[si : tw.si-1])
-}
 func (tw *TWORK) SetBlock(startstring, endstring, newstring string) {
 	if !tw.Seek(startstring) {
 		return
@@ -83,38 +74,34 @@ func (tw *TWORK) SetBlock(startstring, endstring, newstring string) {
 	if !tw.Seek(endstring) {
 		return
 	}
-	rr := []rune(newstring)
-	sr := append(tw.Runes[:si], rr...)
-	tw.Runes = append(sr, tw.Runes[tw.si:]...)
-	//return string(tw.Runes[si:tw.si])
+	//fmt.Println(si, tw.si, tw.ci)
+	//fmt.Println(tw.TEXT[si], tw.TEXT[tw.si], tw.TEXT[tw.ci])
+
+	//fmt.Println(tw.TEXT[si], string(tw.TEXT[si]), tw.TEXT[tw.si], string(tw.TEXT[tw.si]), tw.TEXT[tw.ci], string(tw.TEXT[tw.ci]))
+
+	sr := tw.TEXT[:si] + newstring
+	tw.TEXT = sr + tw.TEXT[tw.si:]
+	tw.ci = si + len(newstring) + len(endstring)
+
+	//return string(tw.TEXT[si:tw.si])
 }
 
 func (tw *TWORK) Split(splstring string) []string {
-	var r []string
-	tw.ci = 0
-	tw.si = 0
-	si := 0
-	for tw.Seek(splstring) {
-		ts := string(tw.Runes[si:tw.si])
-		//fmt.Println("'" + ts + "'")
-		r = append(r, ts)
-		si = tw.ei
-		tw.ci = si
-	}
 
-	return r
+	return strings.Split(tw.TEXT, splstring)
 }
 
 func (tw *TWORK) Seek(ss string) bool {
-	l := len(tw.Runes)
+	//fmt.Println("Seek ->", ss)
+	l := len(tw.TEXT)
 	if tw.ci >= l {
 		return false
 	}
-	sr := []rune(ss)
-	srl := len(sr)
+	//sr := []rune(ss)
+	srl := len(ss)
 	for tw.ci < l {
 		//если первый символ совпадает, то проверить весь слайс
-		if tw.Runes[tw.ci] == sr[0] {
+		if tw.TEXT[tw.ci] == ss[0] {
 			tw.si = tw.ci
 
 			//если в результате выйдем за границ текста, то и проверять нет смысла
@@ -127,7 +114,7 @@ func (tw *TWORK) Seek(ss string) bool {
 			}
 			i := 1
 			for i < srl {
-				if sr[i] == tw.Runes[tw.ci+i] {
+				if ss[i] == tw.TEXT[tw.ci+i] {
 					i++
 				} else {
 					break
@@ -144,53 +131,28 @@ func (tw *TWORK) Seek(ss string) bool {
 	}
 	return false
 }
-func (tw *TWORK) GoToWord(w string) bool {
-	for tw.NextWord() {
-		if tw.CurWord() == w {
-			return true
-		}
-	}
-	return false
-}
-func (tw *TWORK) Replace(ss, ns string) bool {
-	/*
-		if tw.Seek(ss) {
-			rr := []rune(ns)
-			sr := append(tw.Runes[:tw.si], rr...)
-			tw.Runes = append(sr, tw.Runes[tw.ei:]...)
-			return true
-		}
-		return false
-	*/
-	tw.Runes = []rune(strings.Replace(string(tw.Runes), ss, ns, 1))
-	return true
-}
-func (tw *TWORK) ReplaceN(ss, ns string, count int) bool {
 
-	for count > 0 {
-		if tw.Seek(ss) {
-			rr := []rune(ns)
-			sr := append(tw.Runes[:tw.si], rr...)
-			tw.Runes = append(sr, tw.Runes[tw.ei:]...)
-			count--
-		} else {
-			break
-		}
-	}
-	return false
+func (tw *TWORK) Replace(ss, ns string) {
+
+	tw.TEXT = strings.Replace(string(tw.TEXT), ss, ns, 1)
+
+}
+func (tw *TWORK) ReplaceN(ss, ns string, count int) {
+
+	tw.TEXT = strings.Replace(string(tw.TEXT), ss, ns, count)
 }
 
-//words work. ss and es = 32-> " "
+//words work. ss and es = 32-> " " or 10->\n
 
 func (tw *TWORK) NextWord() bool {
-	l := len(tw.Runes)
+	l := len(tw.TEXT)
 	if tw.ci >= l {
 		return false
 	}
 	tw.si = tw.ci
 	//делает шаг вперед если курсор не на старте
 	/*
-		if tw.si != 0 && (tw.Runes[tw.ci] == 32 || tw.Runes[tw.ci] == 10) {
+		if tw.si != 0 && (tw.TEXT[tw.ci] == 32 || tw.TEXT[tw.ci] == 10) {
 			tw.si++
 		}
 	*/
@@ -198,9 +160,9 @@ func (tw *TWORK) NextWord() bool {
 	//перебирать символы пока курсор не дошел до конца массива
 	for tw.ci < l {
 		//если символ равен пробелу или переносу строки, то надо проверить слово ли это
-		if (tw.Runes[tw.ci] == 32 || tw.Runes[tw.ci] == 10) && tw.ci > 0 {
+		if (tw.TEXT[tw.ci] == 32 || tw.TEXT[tw.ci] == 10) && tw.ci > 0 {
 			//если предыдущие смвол отличается от разделителя слов, то у нас слово
-			if tw.Runes[tw.ci-1] != 32 && tw.Runes[tw.ci-1] != 10 {
+			if tw.TEXT[tw.ci-1] != 32 && tw.TEXT[tw.ci-1] != 10 {
 				tw.ei = tw.ci
 				if tw.ei == tw.si {
 					return false
@@ -218,14 +180,38 @@ func (tw *TWORK) NextWord() bool {
 	}
 	return true
 }
+func (tw *TWORK) GoToWord(w string) bool {
+	for tw.NextWord() {
+		if tw.CurWord() == w {
+			return true
+		}
+	}
+	return false
+}
+func (tw *TWORK) GetWordsTo(ew string) string {
+
+	si := tw.ci
+	if !tw.GoToWord(ew) {
+		return ""
+	}
+	return string(tw.TEXT[si : tw.si-1])
+}
 func (tw *TWORK) CurWord() string {
-	return string(tw.Runes[tw.si:tw.ei])
+	return string(tw.TEXT[tw.si:tw.ei])
 }
 func (tw *TWORK) CurIndex() int {
 	return tw.ci
 }
 func (tw *TWORK) SetIndex(ni int) {
-	if ni >= 0 && ni < len(tw.Runes) {
+	if ni >= 0 && ni < len(tw.TEXT) {
 		tw.ci = ni
 	}
+}
+
+func slicetostring(elems []string) string {
+	rt := ""
+	for i := range elems {
+		rt += elems[i]
+	}
+	return rt
 }

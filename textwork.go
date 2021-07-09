@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -73,6 +74,18 @@ func (tw *TWORK) GetBlock(startstring, endstrings string) string {
 		return ""
 	}
 	return string(tw.TEXT[si:tw.si])
+}
+
+// GetBlockAsInt64 get block of text and convert to int64
+func (tw *TWORK) GetBlockAsInt64(startstring, endstrings string) int64 {
+	r, _ := strconv.ParseInt(tw.GetBlock(startstring, endstrings), 10, 64)
+	return r
+}
+
+// GetBlockAsFloat64 get block of text and convert to float64
+func (tw *TWORK) GetBlockAsFloat64(startstring, endstrings string) float64 {
+	r, _ := strconv.ParseFloat(tw.GetBlock(startstring, endstrings), 64)
+	return r
 }
 
 // SetBlock replace block of text between 'startstring' and 'endstrings'

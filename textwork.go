@@ -180,12 +180,7 @@ func (tw *TWORK) NextWord() bool {
 		return false
 	}
 	tw.si = tw.ci
-	//делает шаг вперед если курсор не на старте
-	/*
-		if tw.si != 0 && (tw.TEXT[tw.ci] == 32 || tw.TEXT[tw.ci] == 10) {
-			tw.si++
-		}
-	*/
+
 	tw.ci++
 	//перебирать символы пока курсор не дошел до конца массива
 	for tw.ci < l {

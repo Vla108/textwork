@@ -1,1 +1,1 @@
-Some help funcs for work whith text
+Some help funds for work with text
